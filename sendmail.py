@@ -10,7 +10,7 @@ from email.header import Header
 
 SenderConfig = {
     "user": "13466776842@163.com",      # 发件人邮件地址
-    "password": "VOOOCCWADIBJKHDW",     # 授权码
+    "password": "",                     # 授权码
     "server": "smtp.163.com",           # SMTP服务器地址
     "port": 465                         # SMTP服务器端口
 }

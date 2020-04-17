@@ -12,8 +12,14 @@ SenderConfig = {
 	"server": "smtp.163.com",           # SMTP服务器地址
     "port": 465                         # SMTP服务器端口
     "user": "13466776842@163.com",      # 发件人邮件地址
+<<<<<<< HEAD
     "password": "VOOOCCWADIBJKHDW",     # 授权码
     
+=======
+    "password": "",                     # 授权码
+    "server": "smtp.163.com",           # SMTP服务器地址
+    "port": 465                         # SMTP服务器端口
+>>>>>>> 1c7b4565780bcb03be040f73f3c240dff32248a8
 }
 
 # 邮件接收人列表

@@ -241,9 +241,7 @@ class ParseDate(object):
 
 
 if __name__ == "__main__":
-    
 	time_obj = TimeInterval("2019-01-11")
-    
 	print('11 days after today is:', time_obj.get_day_of_day(11))
     print('11 days before today is:', time_obj.get_day_of_day(-11))
     print('10 months after today is:', time_obj.get_today_month(10))

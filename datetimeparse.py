@@ -137,8 +137,14 @@ class ParseDate(object):
     def check_date(show_date):
         """年月日转换成datetime类型"""
         dt = None
-
-        if re.match(r"\d{4}-\d{1,2}-\d{1,2}$", show_date):
+	
+	if show_date.isdigit():
+            if len(show_date) == 8:
+                dt = datetime.datetime.strptime(show_date, '%Y%m%d').date()
+            else:
+                settle_date = int(show_date)
+                dt = datetime.date(1900, 1, 1) + datetime.timedelta(settle_date - 2)
+        elif re.match(r"\d{4}-\d{1,2}-\d{1,2}$", show_date):
             dt = datetime.datetime.strptime(show_date, "%Y-%m-%d")
         elif re.match(r"\d{4}/\d{1,2}/\d{1,2}$", show_date):
             dt = datetime.datetime.strptime(show_date, "%Y/%m/%d")

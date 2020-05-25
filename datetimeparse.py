@@ -4,20 +4,22 @@ import calendar
 
 
 class TimeInterval(object):
-    
-   """获取当前日期前后N天或N月的日期"""
+    """获取当前日期前后N天或N月的日期"""
 
     def __init__(self, show_date=None):
         """转换为字符串格式"""
         if not show_date:
             show_date = datetime.datetime.now()
-        else:
+
+        if isinstance(show_date, str):
             try:
                 show_date = datetime.datetime.strptime(show_date, "%Y-%m-%d")
             except Exception as e:
                 raise ValueError("日期有误")
-        
-	self.show_date = show_date
+
+        assert isinstance(show_date, datetime.datetime), "日期有误"
+
+        self.show_date = show_date
         self.year = show_date.strftime('%Y')
         self.month = show_date.strftime('%m')
         self.day = show_date.strftime('%d')
@@ -116,6 +118,7 @@ class TimeInterval(object):
 
 class ParseDate(object):
     """解析日期时间"""
+
     @staticmethod
     def check_month(show_date):
         """年月转换成datetime类型"""
@@ -137,8 +140,8 @@ class ParseDate(object):
     def check_date(show_date):
         """年月日转换成datetime类型"""
         dt = None
-	
-	if show_date.isdigit():
+
+        if show_date.isdigit():
             if len(show_date) == 8:
                 dt = datetime.datetime.strptime(show_date, '%Y%m%d').date()
             else:
@@ -205,7 +208,9 @@ class ParseDate(object):
         return dt
 
     @classmethod
-    def str_to_month(cls,  show_date, ast=True):
+    def str_to_month(cls, show_date, ast=True):
+        assert isinstance(show_date, str), '日期类型有误'
+
         try:
             dt = cls.check_month(show_date)
         except Exception as e:
@@ -217,6 +222,7 @@ class ParseDate(object):
 
     @classmethod
     def str_to_date(cls, show_date, ast=True):
+        assert isinstance(show_date, str), '日期类型有误'
         try:
             dt = cls.check_date(show_date)
         except Exception as e:
@@ -228,6 +234,7 @@ class ParseDate(object):
 
     @classmethod
     def str_to_datetime(cls, show_date, ast=True):
+        assert isinstance(show_date, str), '日期类型有误'
         try:
             dt = cls.check_datetime(show_date)
         except Exception as e:
@@ -239,19 +246,208 @@ class ParseDate(object):
 
     @classmethod
     def str_to_showdate(cls, show_date):
+        assert isinstance(show_date, str), '日期类型有误'
         dt = cls.str_to_datetime(show_date, False)
         dt = dt if dt else cls.str_to_date(show_date, False)
         dt = dt if dt else cls.str_to_month(show_date, False)
 
         assert dt, '日期有误'
 
+    @classmethod
+    def get_days_of_month(cls, show_date):
+        """获取某年某月的天数"""
 
+        assert isinstance(show_date, datetime.date), '日期类型有误'
+        year, month = show_date.year, show_date.month
+
+        if month in (1, 3, 5, 7, 8, 10, 12):
+            return 31
+        elif month in (4, 6, 9, 11):
+            return 30
+        elif month == 2 and ((year % 4 == 0 and year % 100 != 0) or (year % 400 == 0)):
+            return 29
+        else:
+            return 28
+
+    @classmethod
+    def get_date_of_days(cls,  n=0, show_date=None):
+        """"计算N天之前/之后的日期"""
+
+        expected_date = TimeInterval(show_date).get_day_of_day(n)
+
+        return expected_date
+
+    @classmethod
+    def get_date_of_month(cls, n=0, show_date=None):
+        """获取当前日期前后N月的日期"""
+
+        expected_date = TimeInterval(show_date).get_today_month(n)
+
+        return expected_date
+
+    @classmethod
+    def get_last_month(cls, show_date=None):
+        """
+        得到上个月的月份
+        :return: <string>
+        """
+        if not show_date:
+            show_date = datetime.date.today()
+
+        if isinstance(show_date, str):
+            try:
+                show_date = datetime.datetime.strptime(show_date, "%Y-%m-%d").date()
+            except Exception as e:
+                raise ValueError("日期有误")
+
+        assert isinstance(show_date, datetime.date), "日期有误"
+
+        first_day = show_date.replace(day=1)
+        month_last_day = first_day - datetime.timedelta(days=1)
+
+        return month_last_day.strftime('%Y-%m')
+
+    @classmethod
+    def get_next_month(cls, show_date=None):
+        """
+        得到下个月的月份
+        :return: <string>
+        """
+        if not show_date:
+            show_date = datetime.date.today()
+
+        if isinstance(show_date, str):
+            try:
+                show_date = datetime.datetime.strptime(show_date, "%Y-%m-%d").date()
+            except Exception as e:
+                raise ValueError("日期有误")
+
+        assert isinstance(show_date, datetime.date), "日期有误"
+
+        month_days = cls.get_days_of_month(show_date)
+
+        last_day = show_date.replace(day=month_days)
+        month_next_day = last_day + datetime.timedelta(days=1)
+
+        return month_next_day.strftime('%Y-%m')
+
+    @classmethod
+    def date_list_generator(cls, start, end):
+        """
+        得到两个日期之间的所有日期
+        :param start: <datetime>
+        :param end: <datetime>
+        :return: <list>
+        """
+
+        if isinstance(start, str):
+            try:
+                start = datetime.datetime.strptime(start, "%Y-%m-%d").date()
+            except Exception as e:
+                raise ValueError("开始日期有误")
+
+        if isinstance(end, str):
+            try:
+                end = datetime.datetime.strptime(end, "%Y-%m-%d").date()
+            except Exception as e:
+                raise ValueError("结束日期有误")
+
+        assert isinstance(start, datetime.date), "开始日期类型有误"
+        assert isinstance(end, datetime.date), "结束日期类型有误"
+
+        (s, e) = (start, end) if start < end else (end, start)
+
+        date_list = [str(s)]
+
+        while s < e:
+            s = s + datetime.timedelta(days=1)
+            date_list.append(str(s))
+
+        return date_list
+
+    @classmethod
+    def month_list_generate(cls, start, end, date_day=False):
+        """
+        得到两个日期之间的所有月份
+        :param start:
+        :param end:
+        :param date_day:
+        :return:
+        """
+
+        if isinstance(start, str):
+            try:
+                start = datetime.datetime.strptime(start, "%Y-%m-%d").date()
+            except Exception as e:
+                raise ValueError("开始日期有误")
+
+        if isinstance(end, str):
+            try:
+                end = datetime.datetime.strptime(end, "%Y-%m-%d").date()
+            except Exception as e:
+                raise ValueError("结束日期有误")
+
+        assert isinstance(start, datetime.date), "开始日期类型有误"
+        assert isinstance(end, datetime.date), "结束日期类型有误"
+
+        if start > end:
+           start, end = end, start
+
+        months = abs((start.year - end.year) * 12 + start.month - end.month)
+
+        if date_day:
+            month_range = ['%s-%02d-01' % (start.year + mon // 12, mon % 12 + 1)
+                           for mon in range(start.month, start.month + months)]
+
+        else:
+            month_range = ['%s-%02d' % (start.year + mon // 12, mon % 12 + 1)
+                           for mon in range(start.month, start.month + months)]
+
+        return month_range
+
+    @classmethod
+    def month_list_year(cls, show_date=None, date_day=False):
+        """
+        获取一年前的所有月份
+        """
+        if not show_date:
+            show_date = datetime.datetime.now().date()
+        elif isinstance(show_date, str):
+            try:
+                show_date = datetime.datetime.strptime(show_date, "%Y-%m-%d").date()
+            except Exception as e:
+                raise ValueError("日期有误")
+
+        assert isinstance(show_date, datetime.date), "结束日期类型有误"
+
+        current_year, current_month = show_date.year, show_date.month
+
+        if current_month == 12:
+            start_date = "%s-01" % current_year
+        else:
+            start_date = '%s-%s' % ((current_year - 1), (current_month + 1))
+
+        start_datetime = datetime.datetime.strptime(start_date, '%Y-%m')
+
+        if date_day:
+            month_range = [
+                '%s-%s-01' % (start_datetime.year + mon // 12, str(mon % 12 + 1).zfill(2))
+                for mon in range(start_datetime.month - 1, start_datetime.month + 11)
+            ]
+        else:
+            month_range = [
+                '%s-%s' % (start_datetime.year + mon // 12, str(mon % 12 + 1).zfill(2))
+                for mon in range(start_datetime.month - 1, start_datetime.month + 11)
+            ]
+
+        return month_range
 
 
 if __name__ == "__main__":
-	time_obj = TimeInterval("2019-01-11")
-	print('11 days after today is:', time_obj.get_day_of_day(11))
-    print('11 days before today is:', time_obj.get_day_of_day(-11))
-    print('10 months after today is:', time_obj.get_today_month(10))
-    print('5 months before today is:', time_obj.get_today_month(-5))
+    # time_obj = TimeInterval("2019-01-11")
+    # print('11 days after today is:', time_obj.get_day_of_day(11))
+    # print('11 days before today is:', time_obj.get_day_of_day(-11))
+    # print('10 months after today is:', time_obj.get_today_month(10))
+    # print('5 months before today is:', time_obj.get_today_month(-5))
 
+    print(ParseDate.month_list_year())

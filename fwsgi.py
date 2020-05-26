@@ -211,19 +211,12 @@ class JrWsgiServerobject():
                             if p == list:
                                 if argsrcs[k] == 'qs':
                                     args[k] = json.loads(args[k]) if args[k].startswith('[') else args[k].split(',')
-                                else:
-                                    assert type(args[k]) == p
                             elif p == bool:
                                 if argsrcs[k] == 'qs':
                                     args[k] = {'true': True, 'false': False}[args[k].lower()]
-                                else:
-                                    assert type(args[k]) == p
                             elif p == dict:
                                 if argsrcs[k] == 'qs':
                                     args[k] = json.loads(args[k])
-                                    assert type(args[k]) == p
-                                else:
-                                    assert type(args[k]) == p
                             elif p == datetime.datetime:
                                 fmt = "%Y-%m-%dT%H:%M:%S" if 'T' in args[k] else "%Y-%m-%d %H:%M:%S"
                                 args[k] = datetime.datetime.strptime(args[k], fmt)
@@ -233,16 +226,18 @@ class JrWsgiServerobject():
                                 args[k] = datetime.datetime.strptime(args[k], "%H:%M:%S").time()
                             elif p == int:
                                 if argsrcs[k] == 'qs':
-                                    args[k] = int(args[k])
-                                else:
-                                    assert type(args[k]) == p
+                                    args[k] = int(args[k]) 
                             elif p == float:
                                 if argsrcs[k] == 'qs':
                                     args[k] = float(args[k])
-                                else:
-                                    assert type(args[k]) == p
+                            elif p == str:
+                                if argsrcs[k] == 'qs':
+                                    args[k] = str(args[k])
                             else:
                                 args[k] = p(args[k])
+                             
+                            assert type(args[k]) == p
+                            
                         except Exception as e:
                             raise AssertionError('不符合条件的参数错误')
 
@@ -291,5 +286,45 @@ class JrWsgiServerobject():
 
         return response
 
+if __name__ == "__main__":
+    """使用示例"""
+    
+    import fwsgi
+    import datetime
+    from flask import Flask, make_response, request
+    from flask_restful import Resource, Api
+
+    app = Flask(__name__)
+    api = Api(app)
+
+    class TaskListAPI(Resource, fwsgi.JrWsgiServerobject):
+
+        def __init__(self):
+            super().__init__()
+
+        def url__tasklistapi__create_cinema(self, code: int, name: str):
+            return {"name": name, "code": code}
+
+        def url__tasklistapi__get_cinema(self, code: int, name: str, info: dict, create_date: datetime.date):
+            return {"name": name, "code": code, "info": info, "create_date": create_date}
+
+        def get(self):
+            
+            response = self.wsgi_flask_handle(request, make_response)
+            
+            return response
+
+        def post(self):
+            
+            response = self.wsgi_flask_handle(request, make_response)
+
+            return response
+
+
+    #  endpoint需使用不同的值
+    api.add_resource(TaskListAPI, '/tasklistapi/create_cinema', endpoint='create_cinema')
+    api.add_resource(TaskListAPI, '/tasklistapi/get_cinema', endpoint='get_cinema')
+    
+    app.run("0.0.0.0", 8088, debug=True)
 
 

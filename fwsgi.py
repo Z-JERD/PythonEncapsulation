@@ -204,7 +204,7 @@ class JrWsgiServerobject():
                 argsrcs.update(dict.fromkeys(json_parameter.keys(), 'js'))
 
             try:
-                assert not (set(args.keys()) - set(wf.__annotations__.keys())), '不符合条件的参数错误'
+                #assert not (set(args.keys()) - set(wf.__annotations__.keys())), '不符合条件的参数错误'
                 for k, p in wf.__annotations__.items():
                     if type(p) == type and k in args:
                         try:

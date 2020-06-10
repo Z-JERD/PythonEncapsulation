@@ -442,6 +442,29 @@ class ParseDate(object):
 
         return month_range
 
+    @classmethod
+    def date_to_datetime(cls, date_time, trans=False):
+        """
+        日期转时间
+        :param date_time:
+        :param trans:时间转为23:59:59
+        :return:
+        """
+        if isinstance(date_time, str):
+            try:
+                date_time = datetime.datetime.strptime(date_time, "%Y-%m-%d").date()
+            except Exception as e:
+                raise ValueError("日期有误")
+
+        assert isinstance(date_time, datetime.date), '日期有误'
+
+        if not trans:
+            date_time = datetime.datetime(date_time.year, date_time.month, date_time.day, 0, 0, 0)
+        else:
+            date_time = datetime.datetime(date_time.year, date_time.month, date_time.day, 23, 59, 59)
+
+        return date_time
+
 
 if __name__ == "__main__":
     # time_obj = TimeInterval("2019-01-11")

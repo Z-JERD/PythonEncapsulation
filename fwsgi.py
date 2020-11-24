@@ -274,22 +274,32 @@ class JrWsgiServerobject():
 
     def wsgi_flask_handle(self, request_obj, response_obj):
         """Flask服务处理"""
-        request_path, args_parameter, json_parameter = request_obj.path, ImmutableMultiDict(request.args).to_dict(), None
+        request_path, ct_method, ct_type = request_obj.path, request_obj.method, request_obj.content_type
+        args_parameter, json_parameter = ImmutableMultiDict(request.args).to_dict(), None
 
-        if request_obj.content_type and request_obj.content_type.startswith(
-                'application/json') and request_obj.get_json():
-            json_parameter = request_obj.get_json()
-        elif request_obj.get_data():
-            json_parameter = request_obj.get_data().decode('utf-8')
+        if ct_method == "POST":
 
-            qs = json_parameter.split('&')
-            qs = [x.split('=', 1) for x in qs if x]
+            if ct_type.startswith('application/json') and request.get_json():
+                """json数据"""
+                json_parameter = request_obj.get_json()
+            elif ct_type.startswith('text/plain') and request.get_data():
+                json_parameter = request.get_data().decode('utf-8')
+            elif ct_type.startswith('multipart/form-data'):
+                """上传文件"""
+                pass
 
-            qs = dict([(k, urllib.parse.unquote_plus(v)) for k, v in qs if not k.startswith('_')])
+            elif ct_type.startswith('application/x-www-form-urlencoded'):
+                """表单数据"""
+                json_parameter = request_obj.get_data().decode('utf-8')
 
-            args_parameter.update(qs)
+                qs = json_parameter.split('&')
+                qs = [x.split('=', 1) for x in qs if x]
 
-            json_parameter = None
+                qs = dict([(k, urllib.parse.unquote_plus(v)) for k, v in qs if not k.startswith('_')])
+
+                args_parameter.update(qs)
+
+                json_parameter = None
 
         result, status_code = self.wsgi_request_handle(request_path, args_parameter, json_parameter)
 

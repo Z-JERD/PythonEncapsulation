@@ -2,6 +2,9 @@ import sys
 import json
 import datetime
 import traceback
+import urllib
+
+from werkzeug.datastructures import ImmutableMultiDict
 
 httpcodes = [
     ("CONTINUE", 100),
@@ -204,7 +207,7 @@ class JrWsgiServerobject():
                 argsrcs.update(dict.fromkeys(json_parameter.keys(), 'js'))
 
             try:
-                #assert not (set(args.keys()) - set(wf.__annotations__.keys())), '不符合条件的参数错误'
+                # assert not (set(args.keys()) - set(wf.__annotations__.keys())), '不符合条件的参数错误'
                 for k, p in wf.__annotations__.items():
                     if type(p) == type and k in args:
                         try:
@@ -226,7 +229,7 @@ class JrWsgiServerobject():
                                 args[k] = datetime.datetime.strptime(args[k], "%H:%M:%S").time()
                             elif p == int:
                                 if argsrcs[k] == 'qs':
-                                    args[k] = int(args[k]) 
+                                    args[k] = int(args[k])
                             elif p == float:
                                 if argsrcs[k] == 'qs':
                                     args[k] = float(args[k])
@@ -235,9 +238,9 @@ class JrWsgiServerobject():
                                     args[k] = str(args[k])
                             else:
                                 args[k] = p(args[k])
-                             
+
                             assert type(args[k]) == p
-                            
+
                         except Exception as e:
                             raise AssertionError('不符合条件的参数错误')
 
@@ -255,7 +258,7 @@ class JrWsgiServerobject():
 
     def http_exception(self, e):
 
-        traceback.print_exc()           # 直接给打印出来
+        traceback.print_exc()  # 直接给打印出来
         # traceback.format_exc()          返回字符串
 
         if isinstance(e, TypeError) and e.args[0].startswith('url__'):
@@ -271,13 +274,22 @@ class JrWsgiServerobject():
 
     def wsgi_flask_handle(self, request_obj, response_obj):
         """Flask服务处理"""
-        request_path, args_parameter, json_parameter = request_obj.path, dict(request_obj.args), None
+        request_path, args_parameter, json_parameter = request_obj.path, ImmutableMultiDict(request.args).to_dict(), None
 
         if request_obj.content_type and request_obj.content_type.startswith(
                 'application/json') and request_obj.get_json():
             json_parameter = request_obj.get_json()
         elif request_obj.get_data():
             json_parameter = request_obj.get_data().decode('utf-8')
+
+            qs = json_parameter.split('&')
+            qs = [x.split('=', 1) for x in qs if x]
+
+            qs = dict([(k, urllib.parse.unquote_plus(v)) for k, v in qs if not k.startswith('_')])
+
+            args_parameter.update(qs)
+
+            json_parameter = None
 
         result, status_code = self.wsgi_request_handle(request_path, args_parameter, json_parameter)
 
@@ -286,9 +298,10 @@ class JrWsgiServerobject():
 
         return response
 
+
 if __name__ == "__main__":
     """使用示例"""
-    
+
     import fwsgi
     import datetime
     from flask import Flask, make_response, request
@@ -296,6 +309,7 @@ if __name__ == "__main__":
 
     app = Flask(__name__)
     api = Api(app)
+
 
     class TaskListAPI(Resource, fwsgi.JrWsgiServerobject):
 
@@ -309,13 +323,11 @@ if __name__ == "__main__":
             return {"name": name, "code": code, "info": info, "create_date": create_date}
 
         def get(self):
-            
             response = self.wsgi_flask_handle(request, make_response)
-            
+
             return response
 
         def post(self):
-            
             response = self.wsgi_flask_handle(request, make_response)
 
             return response
@@ -324,7 +336,7 @@ if __name__ == "__main__":
     #  endpoint需使用不同的值
     api.add_resource(TaskListAPI, '/tasklistapi/create_cinema', endpoint='create_cinema')
     api.add_resource(TaskListAPI, '/tasklistapi/get_cinema', endpoint='get_cinema')
-    
+
     app.run("0.0.0.0", 8088, debug=True)
 
 
